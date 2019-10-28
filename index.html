@@ -1,0 +1,123 @@
+  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>基础-上传文件</title>
+    <style>
+      .upload-progress {
+        width: 600px;
+        height: 20px;
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+      }
+      .upload-progress .pregress {
+        height: 100%;
+        width: 0;
+        max-width: 100%;
+      }
+      .upload-progress .red {
+        background: red;
+      }
+      .upload-progress .green {
+        background: green;
+      }
+    </style>
+</head>
+<body>
+  <div>
+    <!-- 选择文件 -->
+    <p>选择文件（可多选）：<input type="file" name="f1" multiple /></p>
+    <p>上传进度</p>
+    <!-- <div class="upload-progress">
+      <div class="pregress red"></div>
+    </div> -->
+    <!-- 上传预览 -->
+    <div class="img-box"></div>
+    <button class="btn-upload" type="button">上传</button>
+  </div>
+  <script>
+    // 获取文件列表
+    // 限制上传个数 
+    let fileMaxCount = 6;
+    // 文件对象
+    let fileObj = document.querySelector('[name=f1]');
+    let fileList = fileObj.files;
+    let progressNode = document.querySelector('.pregress');
+    let imgBox = document.querySelector('.img-box');
+
+    //保存待上传的文件以及相关信息
+    let willUploadFiles = [];
+    fileObj.addEventListener('change',function(event) {
+      for(let i = 0,len = fileList.length;i<len;i++) {
+        let item = fileList[i];
+        let imgObj = document.createElement('img');
+        let divObj = document.createElement('div');
+        let 
+      };
+    });
+    function submitUpload() {
+      
+      progressNode.classList.remove('green');
+      progressNode.style.width = '0';
+      if(!fileList.length) {
+        alert('未选择文件');
+        return;
+      };
+
+      
+      let fd = new FormData();
+      for(let i = 0,len = fileList.length;i<len;i++) {
+        fd.append('f1', fileList[i]);
+      };
+      let url = 'http://localhost:8100';
+      // fetch('http://localhost:8100',{
+      //   method: 'post',
+      //   body: fd
+      // }).then(res=>{
+      //   console.log(res.json());
+      //   return res.json();
+      // }).then(res=>{
+      //   console.log(res);
+      //   if(res.fileUrl.length) {
+      //     alert('上传成功');
+      //   };
+      // }).catch(error => console.log('Error:', error));
+
+      let xhr = new XMLHttpRequest();
+      xhr.open('POST',url,true);
+      xhr.onreadystatechange = function() {
+        console.log('state change', xhr.readyState);
+        if(this.readyState === 4 && this.status === 200) {
+          console.log(JSON.parse(xhr.responseText));
+          let obj = JSON.parse(xhr.responseText);
+          if(obj.fileUrl.length) {
+            // alert('上传成功');
+          };
+        };
+      };
+
+      // 实现进度条
+      xhr.onprogress = updateProgress;
+      xhr.upload.onprogress = updateProgress;
+      function updateProgress (event) {
+        console.log(event);
+        if(event.lengthComputable) {
+          let completedPercent = (event.loaded / event.total * 100).toFixed(2);
+          progressNode.style.width = `${completedPercent}%`;
+          progressNode.innerHTML = `${completedPercent}%`;
+          if(completedPercent> 95) {
+            progressNode.classList.add('green');
+          };
+        };
+      };
+      
+      //发送
+      xhr.send(fd);
+    };
+    document.querySelector('.btn-upload').addEventListener('click', submitUpload);
+  </script>
+</body>
+</html>
