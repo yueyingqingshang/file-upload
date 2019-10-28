@@ -7,22 +7,32 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>基础-上传文件</title>
     <style>
-      .upload-progress {
-        width: 600px;
-        height: 20px;
-        border: 1px solid #ccc;
-        margin-bottom: 10px;
+      .img-box {
+        margin-bottom: 15px;
       }
-      .upload-progress .pregress {
+      .img-box .item {
+        height: 200px;
+        margin: 15px;
+        display: inline-block;
+      }
+      .img-box img {
         height: 100%;
-        width: 0;
-        max-width: 100%;
       }
-      .upload-progress .red {
+      .img-box .item .progress {
+        height: 25px;
+        width: 100%;
+        position: relative;
+      }
+      .img-box .progress .red {
         background: red;
       }
-      .upload-progress .green {
+      .img-box .progress .green {
         background: green;
+      }
+      .img-box .progress button {
+        position: absolute;
+        top: 0;
+        right: 0;
       }
     </style>
 </head>
@@ -44,47 +54,52 @@
     let fileMaxCount = 6;
     // 文件对象
     let fileObj = document.querySelector('[name=f1]');
-    let fileList = fileObj.files;
-    let progressNode = document.querySelector('.pregress');
     let imgBox = document.querySelector('.img-box');
 
     //保存待上传的文件以及相关信息
     let willUploadFiles = [];
     fileObj.addEventListener('change',function(event) {
+      let fileList = fileObj.files;
+      console.log(fileList);
+      
       for(let i = 0,len = fileList.length;i<len;i++) {
-        let item = fileList[i];
+        let file = fileList[i];
         let imgObj = document.createElement('img');
         let divObj = document.createElement('div');
-        let 
+        let progress = document.createElement('div');
+        progress.className = 'progress';
+        progress.innerHTML = '<div class="red"></div><button type="button">Abort</button>';
+        divObj.className = 'item';
+        imgObj.src = window.URL.createObjectURL(file);
+        imgObj.onload = function () {
+          window.URL.revokeObjectURL(this.src);
+        };
+        divObj.appendChild(imgObj);
+        divObj.appendChild(progress);
+        imgBox.appendChild(divObj);
+        willUploadFiles.push({
+          file,
+          divObj,
+          progress
+        });
       };
     });
-    function submitUpload() {
-      
-      progressNode.classList.remove('green');
-      progressNode.style.width = '0';
-      if(!fileList.length) {
-        alert('未选择文件');
-        return;
+    function xhrSend({file, progress}) {
+      let progressNode = progress.firstElementChild;
+      let cancelBtn = progress.getElementsByTagName('button')[0];
+      let abortFn = function() {
+        if(xhr && xhr.readyState !== 4) {
+          // 取消上传
+          xhr.abort();
+        };
       };
+      cancelBtn.removeEventListener('click', abortFn);
+      cancelBtn.addEventListener('click', abortFn);
 
-      
       let fd = new FormData();
-      for(let i = 0,len = fileList.length;i<len;i++) {
-        fd.append('f1', fileList[i]);
-      };
       let url = 'http://localhost:8100';
-      // fetch('http://localhost:8100',{
-      //   method: 'post',
-      //   body: fd
-      // }).then(res=>{
-      //   console.log(res.json());
-      //   return res.json();
-      // }).then(res=>{
-      //   console.log(res);
-      //   if(res.fileUrl.length) {
-      //     alert('上传成功');
-      //   };
-      // }).catch(error => console.log('Error:', error));
+      
+      fd.append('f1', file);
 
       let xhr = new XMLHttpRequest();
       xhr.open('POST',url,true);
@@ -111,11 +126,28 @@
           if(completedPercent> 95) {
             progressNode.classList.add('green');
           };
+          if(completedPercent>=100){
+            xhr.uploaded=true;
+          }
         };
       };
       
       //发送
       xhr.send(fd);
+      return xhr;
+
+    };
+    function submitUpload() {
+      console.log(willUploadFiles);
+      if(!willUploadFiles.length) {
+        return;
+      };
+      willUploadFiles.forEach(item=>{
+        xhrSend({
+          file: item.file,
+          progress: item.progress
+        })
+      })
     };
     document.querySelector('.btn-upload').addEventListener('click', submitUpload);
   </script>

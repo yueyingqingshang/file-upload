@@ -33,8 +33,9 @@ app.use(ctx => {
   if(!Array.isArray(files)) {
     files = [files];
   };
+  console.log(files);
   files && files.forEach(file => {
-    console.log(file.path);
+    console.log(file);
     let path = file.path.replace(/\\/g,'/');
     let filename = file.name;
     // 得到扩展名
