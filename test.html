@@ -1,0 +1,108 @@
+  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>基础-上传文件</title>
+    <style>
+      .img-box {
+        margin-bottom: 15px;
+      }
+      .img-box .item {
+        height: 200px;
+        margin: 15px;
+        display: inline-block;
+        position: relative;
+      }
+      .img-box img {
+        height: 100%;
+      }
+      .img-box .item .progress {
+        height: 25px;
+        width: 70%;
+      }
+      .img-box .progress .red {
+        background: red;
+      }
+      .img-box .progress .green {
+        background: green;
+      }
+      .img-box .progress button {
+        position: absolute;
+        bottom: -25px;
+        right: 0;
+      }
+    </style>
+</head>
+<body>
+  <div>
+    <!-- 选择文件 -->
+    <p>选择文件（可多选）：<input type="file" name="f1"/></p>
+    <button class="btn-upload" type="button">上传</button>
+  </div>
+  <script>
+    function xhrSend(file, cb) {
+      let url = 'http://localhost:8100';
+      let xhr = new XMLHttpRequest();
+      xhr.open('POST',url,true);
+      xhr.onreadystatechange = function() {
+        if(this.readyState === 4) {
+          console.log(JSON.parse(xhr.responseText));
+          // let obj = JSON.parse(xhr.responseText);
+          cb && cb();
+        };
+      };
+      //发送
+      xhr.send(file);
+    };
+    function submitUpload() {
+      // 分片大小
+      let chunkSize = 2 * 1024 * 1024;
+      // 上传文件
+      let file = document.querySelector('[name=f1]').files[0];
+      // 保存分片数据
+      let chunks = [], token = (+ new Date()), name = file.name, chunkCount = 0, sendChunkCount = 0;
+      // 当文件过大
+      if(file.size>chunkSize) {
+        // 拆分文件
+        let start = 0,end = 0;
+        while(true) {
+          end += chunkSize;
+          let blod = file.slice(start,end);
+          start += chunkSize;
+          if(!blod.size) {
+            break;
+          };
+          chunks.push(blod);
+        }
+      } else {
+        chunks.push(file.slice(0));
+      };
+
+      chunkCount = chunks.length;
+      for(let i = 0;i<chunkCount;i++) {
+        let fd = new FormData();
+        fd.append('token', token);
+        fd.append('f1', chunks[i]);
+        fd.append('index',i);
+        xhrSend(fd, function() {
+          sendChunkCount += 1;
+          if(sendChunkCount === chunkCount) {
+            console.log('上传完成，发送合并请求');
+            let formD = new FormData();
+            formD.append('type','merge');
+            formD.append('token', token);
+            formD.append('chunkCount',chunkCount);
+            formD.append('filename', name);
+            xhrSend(formD);
+          };
+        });
+      };
+
+    };
+    document.querySelector('.btn-upload').addEventListener('click', submitUpload);
+  </script>
+</body>
+</html>
