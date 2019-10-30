@@ -49,7 +49,7 @@
       xhr.open('POST',url,true);
       xhr.onreadystatechange = function() {
         if(this.readyState === 4) {
-          console.log(JSON.parse(xhr.responseText));
+          console.log(xhr.responseText);
           // let obj = JSON.parse(xhr.responseText);
           cb && cb();
         };
